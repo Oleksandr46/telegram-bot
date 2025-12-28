@@ -1,5 +1,3 @@
-// const token = "8242274403:AAEgdl3W_T_rdu7u4_g_V8NPfocGl_CNRQY";
-
 require("dotenv").config();
 
 const TelegramBot = require("node-telegram-bot-api");
