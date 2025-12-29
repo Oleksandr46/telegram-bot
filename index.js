@@ -17,6 +17,8 @@ function getUser(chatId) {
     users[chatId] = {
       lang: null,
       mode: "menu", // menu | ai | order
+      orderStep: null, // 👈 ДОДАТИ
+      order: {}, // дані замовлення
       aiCount: 0,
     };
   }
@@ -65,6 +67,63 @@ bot.on("message", async msg => {
     user.lang = "pl";
     return showMenu(chatId, "pl");
   }
+  // ⬅️ Назад
+  if (text === "⬅️ Назад" || text === "⬅️ Wróć") {
+    if (user.mode === "order") {
+      user.mode = "menu";
+      user.orderStep = null;
+      user.order = {};
+      return showMenu(chatId, user.lang);
+    }
+    return showMenu(chatId, user.lang);
+  }
+
+  //👉 ПРОДУКТ + ФІНІШ
+  if (user.mode === "order" && user.orderStep === "product") {
+    if (text.includes("❌")) {
+      return bot.sendMessage(
+        chatId,
+        user.lang === "ua"
+          ? "❌ Цей товар тимчасово недоступний.\nБудь ласка, оберіть інший 🍯"
+          : "❌ Ten produkt jest tymczasowo niedostępny.\nProszę wybrać inny 🍯"
+      );
+    }
+    user.order.product = text;
+    //повідомлення клієнту
+    bot.sendMessage(
+      chatId,
+      user.lang === "ua"
+        ? "🧾 Підтвердження замовлення:\n\n" +
+            `👤 Імʼя: ${user.order.name}\n` +
+            `📞 Телефон: ${user.order.phone}\n` +
+            `🍯 Продукт: ${user.order.product}\n\n`
+        : "🧾 Potwierdzenie zamówienia: \n\n" +
+            `👤 Nazwa: ${user.order.name}\n` +
+            `📞 Telefon: ${user.order.phone}\n` +
+            `🍯 Produkt: ${user.order.product}\n\n`
+    );
+    bot.sendMessage(
+      chatId,
+      user.lang === "ua"
+        ? "✅ Дякуємо! Ваше замовлення прийнято.\nМи звʼяжемося з вами найближчим часом 🐝"
+        : "✅ Dziękuję! Twoje zamówienie zostało przyjęte.\nSkontaktujemy się z Tobą wkrótce 🐝"
+    );
+    // 🔔 Повідомлення тобі
+    const ADMIN_CHAT_ID = 859056348; // <- сюди свій ID
+
+    bot.sendMessage(
+      ADMIN_CHAT_ID,
+      "🛒 НОВЕ ЗАМОВЛЕННЯ\n\n" +
+        `👤 Імʼя: ${user.order.name}\n` +
+        `📞 Телефон: ${user.order.phone}\n` +
+        `🍯 Продукт: ${user.order.product}`
+    );
+    //reset
+    user.mode = "menu";
+    user.orderStep = null;
+    user.order = {};
+    return;
+  }
 
   // 🍯 Rodzaje miodu (PL)
   if (text === "🍯 Rodzaje miodu" && user.lang === "pl") {
@@ -84,16 +143,14 @@ bot.on("message", async msg => {
     });
   }
 
-  // Опис продукту
-
-  if (text === "🍯 Akacjowy") {
+  // Опис продукту (PL)
+  if (text === "🍯 Akacjowy" && user.mode !== "order") {
     return bot.sendMessage(
       chatId,
       "Akacjowy miód – delikatny, jasny, idealny dla dzieci."
     );
   }
-
-  if (text === "🍯 Lipowy ❌") {
+  if (text === "🍯 Lipowy ❌" && user.mode !== "order") {
     return bot.sendMessage(
       chatId,
       "🍯 Miód lipowy – ❌ brak na stanie.\n\n" +
@@ -102,32 +159,144 @@ bot.on("message", async msg => {
         "• 🍯 Wielokwiatowy"
     );
   }
-
-  if (text === "🍯 Wielokwiatowy") {
+  if (text === "🍯 Wielokwiatowy" && user.mode !== "order") {
     return bot.sendMessage(
       chatId,
       "Miód wielokwiatowy – wzmacnia odporność, uniwersalny."
     );
   }
-
-  if (text === "🍯 Rzepakowy") {
+  if (text === "🍯 Rzepakowy" && user.mode !== "order") {
     return bot.sendMessage(
       chatId,
       "Miód rzepakowy – kremowy, dobry dla serca."
     );
   }
-
-  if (text === "🌼 Pyłek kwiatowy") {
+  if (text === "🌼 Pyłek kwiatowy" && user.mode !== "order") {
     return bot.sendMessage(
       chatId,
       "Pyłek kwiatowy – naturalne witaminy i energia."
     );
   }
-
-  if (text === "🐝 Propolis") {
+  if (text === "🐝 Propolis" && user.mode !== "order") {
     return bot.sendMessage(
       chatId,
       "Propolis – naturalny antybiotyk, wzmacnia odporność."
+    );
+  }
+
+  // 🍯 Види меду (UA)
+  if (text === "🍯 Види меду" && user.lang === "ua") {
+    return bot.sendMessage(chatId, "🍯 Доступні продукти:", {
+      reply_markup: {
+        keyboard: [
+          ["🍯 Акацієвий мед"],
+          ["🍯 Липовий мед ❌"],
+          ["🍯 Багатоквітковий мед"],
+          ["🍯 Рапсовий мед"],
+          ["🌼 Квітковий пилок"],
+          ["🐝 Прополіс"],
+          ["❌ Закрити"],
+        ],
+        resize_keyboard: true,
+      },
+    });
+  }
+
+  // Опис продукту (UA)
+  if (text === "🍯 Акацієвий мед") {
+    return bot.sendMessage(
+      chatId,
+      "Акацієвий мед - ніжний, легкий, відмінно підходить для дітей."
+    );
+  }
+  if (text === "🍯 Липовий мед ❌") {
+    return bot.sendMessage(
+      chatId,
+      "🍯 Липовий мед – ❌ немає в наявності.\n\n" +
+        "👉 Натомість рекомендуємо:\n" +
+        "• 🍯 Акація\n" +
+        "• 🍯 Багатоквітковий"
+    );
+  }
+  if (text === "🍯 Багатоквітковий мед") {
+    return bot.sendMessage(
+      chatId,
+      "Багатоквітковий мед - зміцнює імунітет, універсальний."
+    );
+  }
+  if (text === "🍯 Рапсовий мед") {
+    return bot.sendMessage(
+      chatId,
+      "Рапсовий мед - вершковий, корисний для серця."
+    );
+  }
+  if (text === "🌼 Квітковий пилок") {
+    return bot.sendMessage(
+      chatId,
+      "Квітковий пилок – натуральні вітаміни та енергія."
+    );
+  }
+  if (text === "🐝 Прополіс") {
+    return bot.sendMessage(
+      chatId,
+      "Прополіс - природний антибіотик, зміцнює імунітет."
+    );
+  }
+
+  // 🛒 Замовити
+  if (text === "🛒 Замовити" || text === "🛒 Zamów") {
+    user.mode = "order";
+    user.orderStep = "name";
+    user.order = {};
+    return bot.sendMessage(
+      chatId,
+      user.lang === "ua" ? "✍️ Вкажіть ваше імʼя:" : "✍️ Wpisz swoje imię:"
+    );
+  }
+  //ОБРОБКА КРОКІВ ЗАМОВЛЕННЯ
+  if (user.mode === "order" && user.orderStep === "name") {
+    user.order.name = text;
+    user.orderStep = "phone";
+    return bot.sendMessage(
+      chatId,
+      user.lang === "ua"
+        ? "📞 Вкажіть номер телефону:"
+        : "📞 Wprowadź swój numer telefonu"
+    );
+  }
+
+  //👉 ТЕЛЕФОН
+  if (user.mode === "order" && user.orderStep === "phone") {
+    user.order.phone = text;
+    user.orderStep = "product";
+    return bot.sendMessage(
+      chatId,
+      user.lang === "ua" ? "🍯 Оберіть продукт:" : "🍯 Wybierz produkt:",
+      {
+        reply_markup: {
+          keyboard:
+            user.lang === "pl"
+              ? [
+                  ["🍯 Akacjowy"],
+                  ["🍯 Wielokwiatowy"],
+                  ["🍯 Rzepakowy"],
+                  ["🌼 Pyłek kwiatowy"],
+                  ["🐝 Propolis"],
+                  ["❌ Скасувати"],
+                  ["⬅️ Wróć"],
+                ]
+              : [
+                  ["🍯 Акацієвий мед"],
+                  ["🍯 Багатоквітковий мед"],
+                  ["🍯 Рапсовий мед"],
+                  ["🌼 Квітковий пилок"],
+                  ["🐝 Прополіс"],
+                  ["❌ Скасувати"],
+                  ["⬅️ Назад"],
+                ],
+          resize_keyboard: true,
+        },
+      }
     );
   }
 
@@ -140,9 +309,13 @@ bot.on("message", async msg => {
   // ❌ закриття
   if (text.includes("❌")) {
     user.mode = "menu";
-    return bot.sendMessage(chatId, "Меню закрито", {
-      reply_markup: { remove_keyboard: true },
-    });
+    return bot.sendMessage(
+      chatId,
+      user.lang === "pl" ? "Menu zamknięte" : "Меню закрито",
+      {
+        reply_markup: { remove_keyboard: true },
+      }
+    );
   }
 
   // 🧠 AI відповідає ТІЛЬКИ в ai-режимі
