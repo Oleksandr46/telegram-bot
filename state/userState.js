@@ -1,14 +1,16 @@
 const users = {};
+
 function getUser(chatId) {
   if (!users[chatId]) {
     users[chatId] = {
       lang: null,
-      mode: "menu", // menu | ai | order
-      orderStep: null, // 👈 ДОДАТИ
-      order: {}, // дані замовлення
-      aiCount: 0,
+      mode: "menu", // menu | order
+      orderStep: null, // name | phone
+      cart: [], // 🧺 корзина
+      order: {}, // дані клієнта
     };
   }
   return users[chatId];
 }
-module.exports = { users, getUser };
+
+module.exports = { getUser };

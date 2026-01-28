@@ -1,31 +1,34 @@
 require("dotenv").config();
-
 const TelegramBot = require("node-telegram-bot-api");
-const { getUser } = require("./state/userState");
-const { mainMenu, languageMenu } = require("./keyboards/menus");
-const { handleOrder } = require("./handlers/order");
 
-const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
-const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {
+  polling: true,
+});
+
+const { getUser } = require("./state/userState");
+const { mainMenu, languageMenu, honeyMenu } = require("./keyboards/menus");
+const { handleOrder } = require("./handlers/order");
 
 // /start
 bot.onText(/\/start/, msg => {
   const chatId = msg.chat.id;
+  const user = getUser(chatId);
+
+  user.lang = null;
+  user.mode = "menu";
 
   bot.sendMessage(chatId, "Оберіть мову / Wybierz język:", {
     reply_markup: languageMenu(),
   });
 });
 
-// ОСНОВНИЙ LISTENER
+// ЄДИНИЙ listener
 bot.on("message", msg => {
   const chatId = msg.chat.id;
   const text = msg.text;
   const user = getUser(chatId);
-  console.log("TEXT:", text);
-  console.log("USER:", user);
 
-  // 🌍 вибір мови
+  // 🌍 мова
   if (text === "🇺🇦 Українська") {
     user.lang = "ua";
     user.mode = "menu";
@@ -50,10 +53,28 @@ bot.on("message", msg => {
     });
   }
 
-  // 🛒 замовлення (ЗАВЖДИ)
-  if (text === "🛒 Замовити" || text === "🛒 Zamów" || user.mode === "order") {
+  // 🍯 Види меду
+  if (text === "🍯 Види меду") {
+    return bot.sendMessage(chatId, "Оберіть мед:", {
+      reply_markup: honeyMenu("ua"),
+    });
+  }
+
+  if (text === "🍯 Rodzaje miodu") {
+    return bot.sendMessage(chatId, "Wybierz miód:", {
+      reply_markup: honeyMenu("pl"),
+    });
+  }
+
+  // 🤖 консультант (поки заглушка)
+  if (text === "🤖 Консультант" || text === "🤖 Konsultant") {
+    return bot.sendMessage(chatId, "🤖 Консультант скоро буде доступний 🙂");
+  }
+
+  // 🛒 замовлення
+  if (user.mode === "order") {
     return handleOrder(bot, msg, user);
   }
-};);
+});
 
 console.log("✅ Бот запущений");

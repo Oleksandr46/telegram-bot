@@ -7,14 +7,30 @@ function languageMenu() {
 
 function mainMenu(lang) {
   const menus = {
-    ua: ["🍯 Види меду", "🤖 Консультант", "🛒 Замовити"],
-    pl: ["🍯 Rodzaje miodu", "🤖 Konsultant", "🛒 Zamów"],
+    ua: [["🍯 Види меду"], ["🛒 Замовити"], ["🤖 Консультант"]],
+    pl: [["🍯 Rodzaje miodu"], ["🛒 Zamów"], ["🤖 Konsultant"]],
   };
 
   return {
-    keyboard: [...menus[lang].map(b => [b]), ["🏠 Головне меню"]],
+    keyboard: [...menus[lang], ["🏠 Головне меню"]],
     resize_keyboard: true,
   };
 }
 
-module.exports = { mainMenu, languageMenu };
+function honeyMenu(lang) {
+  const honeys = {
+    ua: [["🍯 Липовий мед"], ["🍯 Акацієвий мед"], ["🍯 Гречаний мед"]],
+    pl: [["🍯 Lipowy"], ["🍯 Akacjowy"], ["🍯 Gryczany"]],
+  };
+
+  return {
+    keyboard: [...honeys[lang], ["⬅ Назад"]],
+    resize_keyboard: true,
+  };
+}
+
+module.exports = {
+  languageMenu,
+  mainMenu,
+  honeyMenu,
+};
