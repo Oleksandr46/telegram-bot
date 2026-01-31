@@ -4,10 +4,10 @@ function getUser(chatId) {
   if (!users[chatId]) {
     users[chatId] = {
       lang: null,
-      mode: "menu", // menu | order
-      orderStep: null, // name | phone
-      cart: [], // 🧺 корзина
-      order: {}, // дані клієнта
+      mode: "menu",
+      orderStep: null,
+      cart: {},
+      order: {},
     };
   }
   return users[chatId];
